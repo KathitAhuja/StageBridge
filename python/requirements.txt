@@ -1,0 +1,4 @@
+sherpa-onnx
+rapidfuzz
+sounddevice
+numpy

@@ -1,0 +1,162 @@
+[
+  {
+    "line_id": 1,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Just look at this place, Abu. We’re standing in a mountain of gold.",
+    "spanish_translation": "Solo mira este lugar, Abu. Estamos parados en una montaña de oro.",
+    "chinese_translation": "阿布，看看这个地方。我们正站在一座金山上。"
+  },
+  {
+    "line_id": 2,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Remember what that giant sand head said—touch nothing except the lamp.",
+    "spanish_translation": "Recuerda lo que dijo esa cabeza gigante de arena: no toques nada excepto la lámpara.",
+    "chinese_translation": "还记得那个巨大的沙头说了什么吗——除了神灯，什么都不要碰。"
+  },
+  {
+    "line_id": 3,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "There it is, right on that pedestal.",
+    "spanish_translation": "Ahí está, justo en ese pedestal.",
+    "chinese_translation": "就在那里，就在那个底座上。"
+  },
+  {
+    "line_id": 4,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "All this treasure, and that strange old man just wants an ancient piece of junk?",
+    "spanish_translation": "¿Tomo este tesoro, y ese viejo extraño solo quiere una pieza de chatarra antigua?",
+    "chinese_translation": "这么多宝藏，那个怪老头居然只要一件破旧的古董？"
+  },
+  {
+    "line_id": 5,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Abu, keep your hands in your pockets. I mean it.",
+    "spanish_translation": "Abu, mantén las manos en tus bolsillos. Hablo en serio.",
+    "chinese_translation": "阿布，把手放在口袋里。我是认真的。"
+  },
+  {
+    "line_id": 6,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Almost got it... got it! See? Easy as stealing a loaf of bread.",
+    "spanish_translation": "Casi lo tengo... ¡lo tengo! ¿Ves? Tan fácil como robar un trozo de pan.",
+    "chinese_translation": "快拿到了……拿到了！看到了吧？就像偷一块面包一样简单。"
+  },
+  {
+    "line_id": 7,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Abu? What are you looking at?",
+    "spanish_translation": "¿Abu? ¿Qué estás mirando?",
+    "chinese_translation": "阿布？你在看什么？"
+  },
+  {
+    "line_id": 8,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Abu, drop that ruby! Put it back right now!",
+    "spanish_translation": "¡Abu, suelta ese rubí! ¡Ponlo de vuelta ahora mismo!",
+    "chinese_translation": "阿布，放下那个红宝石！立刻把它放回去！"
+  },
+  {
+    "line_id": 9,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "No, don't touch—!",
+    "spanish_translation": "¡No, no toques—!",
+    "chinese_translation": "不，别碰——！"
+  },
+  {
+    "line_id": 10,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "CAVE VOICE",
+    "english": "INFIDELS!",
+    "spanish_translation": "¡INFIELES!",
+    "chinese_translation": "无徒们！"
+  },
+  {
+    "line_id": 11,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "CAVE VOICE",
+    "english": "You have touched the forbidden treasure!",
+    "spanish_translation": "¡Han tocado el tesoro prohibido!",
+    "chinese_translation": "你们触碰了被禁止的宝藏！"
+  },
+  {
+    "line_id": 12,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "CAVE VOICE",
+    "english": "Now you shall never see the light of day again!",
+    "spanish_translation": "¡Ahora nunca más verán la luz del día!",
+    "chinese_translation": "现在你们将永远再也看不到天日！"
+  },
+  {
+    "line_id": 13,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "The whole ground is collapsing!",
+    "spanish_translation": "¡Todo el suelo se está derrumbando!",
+    "chinese_translation": "整个地面都在塌陷！"
+  },
+  {
+    "line_id": 14,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Jump, Abu! Grab my shoulder!",
+    "spanish_translation": "¡Salta, Abu! ¡Aagárrate a mi hombro!",
+    "chinese_translation": "跳过来，阿布！抓住我的肩膀！"
+  },
+  {
+    "line_id": 15,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ABU",
+    "english": "Aladdin! Help!",
+    "spanish_translation": "¡Aladdin! ¡Ayuda!",
+    "chinese_translation": "阿拉丁！救命！"
+  },
+  {
+    "line_id": 16,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "I’ve got you! Don't let go of my neck!",
+    "spanish_translation": "¡Te tengo! ¡No te sueltes de mi cuello!",
+    "chinese_translation": "我抓住你了！别松开我的脖子！"
+  },
+  {
+    "line_id": 17,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "The entrance is sealing up—run!",
+    "spanish_translation": "La entrada se está cerrando—¡corre!",
+    "chinese_translation": "入口正在封闭——快跑！"
+  },
+  {
+    "line_id": 18,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "We’re not going to make it!",
+    "spanish_translation": "¡No lo vamos a lograr!",
+    "chinese_translation": "我们要赶不上了！"
+  },
+  {
+    "line_id": 19,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ABU",
+    "english": "Uh-oh...",
+    "spanish_translation": "Uh-oh...",
+    "chinese_translation": "噢-噢……"
+  },
+  {
+    "line_id": 20,
+    "scene_id": "SCENE_CAVE_OF_WONDERS_01",
+    "actor": "ALADDIN",
+    "english": "Hang on!",
+    "spanish_translation": "¡Agárrate fuerte!",
+    "chinese_translation": "抓紧了！"
+  }
+]
