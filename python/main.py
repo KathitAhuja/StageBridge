@@ -6,25 +6,32 @@ ROLE  : Master Application Orchestrator & Execution Thread Controller
 
 FUNCTIONAL OVERVIEW:
 1. Loads script JSON and triggers hotwords vocabulary generation.
-2. Initializes audio processing queue, ASR engine, and CueMatcher instance.
-3. Connects subscribers (Web Server stub) to EventBus.
-4. Spawns asynchronous worker threads for web hosting and ASR audio decoding.
-5. Captures real-time microphone stream via sounddevice callback loop.
+2. Initializes the ASR engine and CueMatcher instance.
+3. Wires the audience caption web server (SSE Broadcaster) up to the EventBus.
+4. Spawns the Speech-to-Text engine (mic capture + ASR decode loop) on a
+   background worker thread.
+5. Runs the audience caption web server (FastAPI/Uvicorn) on the MAIN thread.
+
+THREADING MODEL:
+    Main thread........ Uvicorn / FastAPI web server (audience captions)
+    Background thread.. Speech-to-Text engine (mic capture + cue matching)
 """
 
-import queue
 import threading
-import sounddevice as sd
+
+import uvicorn
 
 # Core architecture imports
-from core.config import SAMPLE_RATE, BLOCK_SIZE
+from core.config import WEB_HOST, WEB_PORT
 from core.cue_matcher import CueMatcher
-from core.asr_engine import find_mic_device, create_recognizer
+from core.asr_engine import create_recognizer
 from core.event_bus import event_bus
+from core.speech_to_text import run_speech_to_text
 
 # Support imports
 from script_loader import load_script, generate_hotwords
-from web.web_server import start_caption_server, web_broadcast_subscriber
+from web.server import app
+from web.broadcaster import web_broadcaster
 
 # =============================================================================
 # STEP 1: SYSTEM INITIALIZATION & DATA LOADING
@@ -35,99 +42,45 @@ script_data = load_script()
 # Build dynamic hotwords.txt file from script vocabulary
 generate_hotwords(script_data)
 
-# Register web server subscriber function to receive EventBus cue events
-event_bus.subscribe(web_broadcast_subscriber)
+# Register the web browser broadcaster as a subscriber so live cues reach
+# connected audience browsers. web_broadcaster.publish() is thread-safe:
+# CueMatcher fires it from the background Speech-to-Text thread, and it
+# hands cues off to each browser's SSE connection running on the main
+# thread's event loop.
+event_bus.subscribe(web_broadcaster.publish)
 
 # Instantiate matcher engine and ASR recognizer objects
 matcher = CueMatcher(script_data)
 recognizer = create_recognizer()
 stream = recognizer.create_stream()
 
-# Queue to pass audio blocks safely between sounddevice callback and worker thread
-audio_queue = queue.Queue()
+# =============================================================================
+# STEP 2: SPEECH-TO-TEXT WORKER THREAD
+# =============================================================================
+# Signals the STT thread to shut down cleanly when the web server stops.
+stt_stop_event = threading.Event()
 
-# Locate hardware USB microphone device index
-mic_index = find_mic_device()
-
-# Start background web caption server thread
-threading.Thread(target=start_caption_server, daemon=True).start()
-
+stt_thread = threading.Thread(
+    target=run_speech_to_text,
+    args=(matcher, recognizer, stream, stt_stop_event),
+    daemon=True,
+    name="StageBridge-STT",
+)
+stt_thread.start()
 
 # =============================================================================
-# STEP 2: AUDIO STREAMING & DECODING WORKER THREADS
-# =============================================================================
-def audio_callback(indata, frames, time, status):
-    """
-    Hardware Audio Callback: Executed by sounddevice whenever new PCM audio arrives.
-    """
-    if status and not status.input_overflow:
-        print(f"\n[AUDIO WARNING]: {status}", flush=True)
-    # Append fresh copy of raw audio frame block into processing queue
-    audio_queue.put(indata.copy())
-
-
-def process_audio():
-    """
-    ASR Worker Thread: Pulls raw audio frames from queue, passes them into Zipformer
-    stream, decodes text, and forwards updates to CueMatcher.
-    """
-    last_text = ""
-    while True:
-        # Block until new audio chunk is available in queue
-        samples = audio_queue.get()
-        if samples is None:  # Shutdown signal received
-            break
-
-        # Pass 16kHz float32 audio samples into Sherpa-ONNX stream buffer
-        stream.accept_waveform(SAMPLE_RATE, samples[:, 0])
-
-        # Run model inference while audio data is ready for decoding
-        while recognizer.is_ready(stream):
-            recognizer.decode_stream(stream)
-
-        # Check silence/pause status and extract current text string
-        is_endpoint = recognizer.is_endpoint(stream)
-        text = recognizer.get_result(stream).strip()
-
-        # Evaluate text against script lines whenever recognized text updates
-        if text and text != last_text:
-            matcher.evaluate(text)
-            last_text = text
-
-        # Clear stream context buffer upon detected speech pause
-        if is_endpoint:
-            recognizer.reset(stream)
-            last_text = ""
-
-        audio_queue.task_done()
-
-
-# Spawn audio decoding loop as background daemon thread
-threading.Thread(target=process_audio, daemon=True).start()
-
-
-# =============================================================================
-# STEP 3: MAIN EXECUTION LOOP
+# STEP 3: AUDIENCE CAPTION WEB SERVER (MAIN THREAD)
 # =============================================================================
 print("\n" + "=" * 65, flush=True)
-print(f"  STAGEBRIDGE CUE ENGINE ONLINE (MIC INDEX {mic_index})", flush=True)
-print("  Speak your stage lines now!", flush=True)
+print(f"  STAGEBRIDGE CAPTION SERVER ONLINE  http://{WEB_HOST}:{WEB_PORT}", flush=True)
 print("=" * 65 + "\n", flush=True)
 
-# Open continuous non-blocking microphone audio stream
-with sd.InputStream(
-    device=mic_index,
-    samplerate=SAMPLE_RATE,
-    channels=1,
-    dtype='float32',
-    callback=audio_callback,
-    blocksize=BLOCK_SIZE
-):
-    try:
-        # Keep main thread alive while background threads process audio
-        while True:
-            sd.sleep(100)
-    except KeyboardInterrupt:
-        print("\n\nStopping StageBridge engine...", flush=True)
-        # Send sentinel signal to stop audio processing worker thread
-        audio_queue.put(None)
+try:
+    # Blocking call: this IS the main thread's execution loop from here on.
+    uvicorn.run(app, host=WEB_HOST, port=WEB_PORT, log_level="info")
+except KeyboardInterrupt:
+    print("\n\nStopping StageBridge engine...", flush=True)
+finally:
+    # Signal the Speech-to-Text worker thread to stop and wait for it to exit.
+    stt_stop_event.set()
+    stt_thread.join(timeout=5)

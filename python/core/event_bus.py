@@ -10,6 +10,21 @@ FUNCTIONAL OVERVIEW:
    without coupling recognition logic to delivery mechanisms.
 3. Isolates subscriber execution errors so one failing output channel
    does not crash the rest of the application.
+
+ADDING A NEW OUTPUT CHANNEL:
+EventBus doesn't know or care what a subscriber does with a cue -- it just
+calls it with the payload dict. To add a new delivery channel (e.g. an LCD
+screen), write a plain function taking one dict argument and register it:
+
+    def lcd_subscriber(payload: dict):
+        lcd.write(payload["english"][:16])
+
+    event_bus.subscribe(lcd_subscriber)
+
+See console_logger() below for a working example, and web/broadcaster.py's
+WebBroadcaster.publish() for a subscriber that bridges into another
+thread/event loop (needed for web browser delivery specifically -- most
+subscribers, like an LCD, don't need anything that involved).
 """
 
 class EventBus:

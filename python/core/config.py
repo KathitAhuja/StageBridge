@@ -56,3 +56,12 @@ MID_SENTENCE_THRESHOLD = 72
 
 # Maximum number of upcoming script lines to evaluate simultaneously from pointer
 LOOKAHEAD_WINDOW = 3
+
+# =============================================================================
+# SECTION 4: AUDIENCE CAPTION WEB SERVER PARAMETERS
+# =============================================================================
+# Interface binding address for the FastAPI/Uvicorn caption server (main thread)
+WEB_HOST = "0.0.0.0"
+
+# Port exposed for audience browsers to connect and receive live translated cues
+WEB_PORT = 8080

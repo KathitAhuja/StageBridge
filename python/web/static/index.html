@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage Bridge - Live Script Feed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col font-sans">
+
+    <!-- Fixed Header (65px height) -->
+    <header class="h-[65px] p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center z-10 shrink-0">
+        <div>
+            <h1 class="text-lg font-bold text-amber-400 tracking-wide">STAGE BRIDGE</h1>
+            <p id="scene-tag" class="text-xs text-slate-400 font-mono">SCENE_CAVE_OF_WONDERS_01</p>
+        </div>
+        <div id="live-indicator" class="hidden items-center gap-2 text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> LIVE
+        </div>
+    </header>
+
+    <!-- Language Selection View -->
+    <div id="selection-modal" class="fixed inset-0 bg-slate-950/95 z-50 flex items-center justify-center p-6">
+        <div class="max-w-md w-full space-y-6 text-center">
+            <h2 class="text-2xl font-bold">Select Script Language</h2>
+            <p class="text-sm text-slate-400">Seleccione su idioma / 请选择语言</p>
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button onclick="startStream('spanish')" class="p-5 bg-slate-900 border border-slate-800 hover:border-amber-400 rounded-xl transition text-center hover:scale-105 active:scale-95">
+                    <div class="text-3xl mb-2">🇲🇽</div>
+                    <div class="font-bold text-amber-400">Español</div>
+                </button>
+                <button onclick="startStream('chinese')" class="p-5 bg-slate-900 border border-slate-800 hover:border-amber-400 rounded-xl transition text-center hover:scale-105 active:scale-95">
+                    <div class="text-3xl mb-2">🇨🇳</div>
+                    <div class="font-bold text-amber-400">中文</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrollable Chat Container (Takes remaining height exactly) -->
+    <main id="chat-container" class="flex-1 h-[calc(100vh-65px)] p-4 space-y-4 overflow-y-auto max-w-2xl w-full mx-auto">
+        <!-- Dialogue bubbles render here -->
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

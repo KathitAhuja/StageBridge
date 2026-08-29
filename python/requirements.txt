@@ -2,3 +2,5 @@ sherpa-onnx
 rapidfuzz
 sounddevice
 numpy
+fastapi>=0.100.0
+uvicorn>=0.22.0

@@ -2,3 +2,9 @@
 .cache/
 /python/core/__pycache__
 /python/__pycache__
+.idea
+python/.DS_Store
+python/core/.DS_Store
+python/web/__pycache__/**
+python/web/__pycache__/**
+python/web/.DS_Store

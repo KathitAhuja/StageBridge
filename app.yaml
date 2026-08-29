@@ -9,7 +9,8 @@ icon: 😀
 
 # A list of network ports that the application exposes.
 # Example: [80, 443]
-ports: []
+# 8080: Audience caption web server (FastAPI/Uvicorn, see core/config.py WEB_PORT)
+ports: [8080]
 
 # A list of bricks used by this application.
 bricks: []
