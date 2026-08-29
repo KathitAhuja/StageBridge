@@ -1,100 +1,140 @@
 """
 ===============================================================================
 MODULE: speech_to_text.py
-ROLE  : Speech-to-Text Worker Thread (Mic Capture + ASR Decode Loop)
+ROLE  : High-Speed Real-Time Audio Streaming & STT Processing Loop
 ===============================================================================
-
-FUNCTIONAL OVERVIEW:
-1. Owns the full life cycle of the microphone audio stream and the Sherpa-ONNX
-   decode loop, previously the "main execution loop" of the application.
-2. Designed to run entirely on a background worker thread so that the main
-   thread is free to run the audience caption web server (see web/server.py).
-3. Exits cleanly when signalled via a threading.Event, so the process can shut
-   down gracefully when the web server (main thread) stops.
 """
 
+import os
+import sys
 import queue
+import threading
 import sounddevice as sd
+import sherpa_onnx
 
-from core.config import SAMPLE_RATE, BLOCK_SIZE
-from core.asr_engine import find_mic_device
+from core.config import (
+    TOKENS_PATH,
+    ENCODER_PATH,
+    DECODER_PATH,
+    JOINER_PATH,
+    SAMPLE_RATE,
+    BLOCK_SIZE,
+    NUM_THREADS,
+)
+from core.cue_matcher import CueMatcher
 
 
-def run_speech_to_text(matcher, recognizer, stream, stop_event):
+def find_mic_device():
+    """Scans host audio input devices for dedicated USB hardware microphones."""
+    try:
+        for idx, dev in enumerate(sd.query_devices()):
+            if dev.get("max_input_channels", 0) > 0 and (
+                "TONOR" in dev.get("name", "") or "USB" in dev.get("name", "")
+            ):
+                return idx
+    except Exception:
+        pass
+    return None
+
+
+def create_recognizer() -> sherpa_onnx.OnlineRecognizer:
     """
-    Thread entry point: captures live microphone audio, decodes it via the
-    Sherpa-ONNX streaming recognizer, and forwards recognized text into the
-    CueMatcher for cue triggering.
-
-    Args:
-        matcher (CueMatcher): Fuzzy-matching engine evaluating live text.
-        recognizer (sherpa_onnx.OnlineRecognizer): Configured ASR engine.
-        stream: Recognizer stream object created via recognizer.create_stream().
-        stop_event (threading.Event): Signals this worker thread to shut down.
+    Instantiates Sherpa-ONNX transducer recognizer using greedy search
+    for ultra-low latency processing.
     """
-    # Queue to pass audio blocks safely between sounddevice callback and this thread
-    audio_queue = queue.Queue()
+    return sherpa_onnx.OnlineRecognizer.from_transducer(
+        tokens=TOKENS_PATH,
+        encoder=ENCODER_PATH,
+        decoder=DECODER_PATH,
+        joiner=JOINER_PATH,
+        decoding_method="greedy_search",
+        num_threads=getattr(sys.modules[__name__], "NUM_THREADS", 4),
+        sample_rate=SAMPLE_RATE,
+        feature_dim=80,
+        provider="cpu",
+        enable_endpoint_detection=True,
+        rule1_min_trailing_silence=2.4,
+        rule2_min_trailing_silence=1.2,
+        rule3_min_utterance_length=20.0,
+    )
 
-    # Locate hardware USB microphone device index
+
+def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = None):
+    print("[STT] Initializing Sherpa-ONNX High-Speed Recognizer (greedy_search)...", flush=True)
+    recognizer = create_recognizer()
+    stream = recognizer.create_stream()
+
     mic_index = find_mic_device()
+    audio_queue = queue.Queue(maxsize=50)
 
-    def audio_callback(indata, frames, time, status):
-        """
-        Hardware Audio Callback: Executed by sounddevice whenever new PCM audio arrives.
-        """
+    def audio_callback(indata, frames, time_info, status):
         if status and not status.input_overflow:
-            print(f"\n[AUDIO WARNING]: {status}", flush=True)
-        # Append fresh copy of raw audio frame block into processing queue
-        audio_queue.put(indata.copy())
+            print(f"\n[AUDIO WARNING]: {status}", file=sys.stderr, flush=True)
+        try:
+            audio_queue.put_nowait(indata.copy())
+        except queue.Full:
+            pass
 
-    print("\n" + "=" * 65, flush=True)
-    print(f"  STAGEBRIDGE CUE ENGINE ONLINE (MIC INDEX {mic_index})", flush=True)
-    print("  Speak your stage lines now!", flush=True)
-    print("=" * 65 + "\n", flush=True)
+    print(
+        f"[STT] Hardware Audio Stream Online (Mic Index: {mic_index}, {SAMPLE_RATE} Hz)",
+        flush=True,
+    )
+    print("[STT] System ready. Speak your script lines...\n", flush=True)
 
-    # Open continuous non-blocking microphone audio stream for the lifetime
-    # of this worker thread.
-    with sd.InputStream(
-        device=mic_index,
-        samplerate=SAMPLE_RATE,
-        channels=1,
-        dtype='float32',
-        callback=audio_callback,
-        blocksize=BLOCK_SIZE
-    ):
-        last_text = ""
-        while not stop_event.is_set():
-            try:
-                # Block briefly for new audio; re-check stop_event periodically
-                # so shutdown doesn't hang waiting on a queue that never fills.
-                samples = audio_queue.get(timeout=0.2)
-            except queue.Empty:
-                continue
+    last_text = ""
 
-            if samples is None:  # Shutdown sentinel
-                break
+    try:
+        with sd.InputStream(
+            device=mic_index,
+            channels=1,
+            dtype="float32",
+            samplerate=SAMPLE_RATE,
+            blocksize=BLOCK_SIZE,
+            callback=audio_callback,
+        ):
+            while stop_event is None or not stop_event.is_set():
+                try:
+                    samples = audio_queue.get(timeout=0.2)
+                except queue.Empty:
+                    continue
 
-            # Pass 16kHz float32 audio samples into Sherpa-ONNX stream buffer
-            stream.accept_waveform(SAMPLE_RATE, samples[:, 0])
+                if samples is None:
+                    break
 
-            # Run model inference while audio data is ready for decoding
-            while recognizer.is_ready(stream):
-                recognizer.decode_stream(stream)
+                # Accept waveform chunk into active stream
+                stream.accept_waveform(SAMPLE_RATE, samples.reshape(-1))
 
-            # Check silence/pause status and extract current text string
-            is_endpoint = recognizer.is_endpoint(stream)
-            text = recognizer.get_result(stream).strip()
+                while recognizer.is_ready(stream):
+                    recognizer.decode_stream(stream)
 
-            # Evaluate text against script lines whenever recognized text updates
-            if text and text != last_text:
-                matcher.evaluate(text)
-                last_text = text
+                text = recognizer.get_result(stream).strip()
 
-            # Clear stream context buffer upon detected speech pause
-            if is_endpoint:
-                recognizer.reset(stream)
-                last_text = ""
+                if text and text != last_text:
+                    cue_triggered = matcher.evaluate(text)
+                    last_text = text
 
-            audio_queue.task_done()
+                    # Reset stream state instantly when a cue is matched
+                    if cue_triggered:
+                        recognizer.reset(stream)
+                        last_text = ""
+                        continue
 
-    print("\n[STT] Speech-to-text worker thread stopped.", flush=True)
+                if recognizer.is_endpoint(stream):
+                    recognizer.reset(stream)
+                    last_text = ""
+
+                audio_queue.task_done()
+
+    except Exception as e:
+        print(
+            f"\n[STT ERROR]: Unexpected error in speech recognition loop: {e}",
+            file=sys.stderr,
+            flush=True,
+        )
+    finally:
+        recognizer.reset(stream)
+        print("[STT] Speech-to-text worker thread stopped.", flush=True)
+
+
+# Backwards compatibility alias
+run_speech_to_text = start_speech_recognition
