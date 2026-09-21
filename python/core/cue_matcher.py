@@ -15,6 +15,11 @@ class CueMatcher:
     def __init__(self, script_data: list):
         self.script_data = script_data
         self.current_line_idx = 0
+        # Payload dict from the most recently triggered cue (None until the
+        # first match). The STT loop reads this right after evaluate()
+        # returns True to know which line/actor the just-recorded audio
+        # buffer belongs to, for saving it under voice/original.
+        self.last_payload = None
 
     def _clean_text(self, text: str) -> str:
         if not text:
@@ -37,6 +42,7 @@ class CueMatcher:
             "line_index": matched_idx,
         }
 
+        self.last_payload = payload
         event_bus.emit_cue(payload)
         self.current_line_idx = matched_idx + 1
 

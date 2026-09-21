@@ -9,6 +9,7 @@ import os
 import sys
 import queue
 import threading
+import numpy as np
 import sounddevice as sd
 import sherpa_onnx
 
@@ -20,8 +21,12 @@ from core.config import (
     SAMPLE_RATE,
     BLOCK_SIZE,
     NUM_THREADS,
+    TRAILING_SILENCE_RMS_THRESHOLD,
+    TRAILING_SILENCE_SECONDS,
+    MAX_LINE_RECORD_SECONDS,
 )
 from core.cue_matcher import CueMatcher
+from core.audio_recorder import save_utterance_audio
 
 
 def find_mic_device():
@@ -81,7 +86,41 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
     )
     print("[STT] System ready. Speak your script lines...\n", flush=True)
 
+    block_duration = BLOCK_SIZE / SAMPLE_RATE
+    trailing_silence_chunks = max(1, round(TRAILING_SILENCE_SECONDS / block_duration))
+    max_chunks_per_recording = max(1, round(MAX_LINE_RECORD_SECONDS / block_duration))
+
     last_text = ""
+    # Raw audio chunks for the utterance currently being decoded/matched
+    # (since the last stream reset). The instant it's confirmed as a cue
+    # match -- which can happen on a prefix/short-target match, i.e. before
+    # the actor has finished speaking the whole line -- these chunks are
+    # handed off to a tail recording (below) rather than saved immediately,
+    # and this buffer restarts empty for the next line right away.
+    utterance_chunks = []
+
+    # Tail recordings in progress: one entry per matched cue that is still
+    # capturing audio past its match point, waiting for the line to end.
+    # Each entry:
+    #   chunks      -- audio collected for this line so far
+    #   payload     -- the matched cue payload (for filename/actor/line_id)
+    #   silent_run  -- consecutive near-silent chunks seen since the match
+    # Finalized (saved) on whichever comes first:
+    #   1. The NEXT cue matches -- the strongest signal, since a new line
+    #      being confirmed means this one is definitely over even if the
+    #      next actor started with zero gap (overlapping/rapid dialogue).
+    #   2. Trailing silence (TRAILING_SILENCE_SECONDS) -- covers lines with
+    #      no immediate next line (end of scene, blackout, ad-lib).
+    #   3. MAX_LINE_RECORD_SECONDS safety cap.
+    # Runs independently of ASR matching/reset, so it never delays
+    # detecting the next cue.
+    tail_recordings = []
+
+    def _finalize_tail_recordings(recordings):
+        """Saves every still-open tail recording (used on shutdown)."""
+        for rec in recordings:
+            if rec["chunks"]:
+                save_utterance_audio(np.concatenate(rec["chunks"]), rec["payload"])
 
     try:
         with sd.InputStream(
@@ -101,8 +140,37 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
                 if samples is None:
                     break
 
+                flat_samples = samples.reshape(-1)
+                chunk_copy = flat_samples.copy()
+                utterance_chunks.append(chunk_copy)
+
+                # Feed this same chunk to any lines still finishing their
+                # tail recording, and check whether each has now hit real
+                # trailing silence (or the safety length cap).
+                if tail_recordings:
+                    chunk_rms = float(np.sqrt(np.mean(np.square(flat_samples))))
+                    still_open = []
+                    for rec in tail_recordings:
+                        rec["chunks"].append(chunk_copy)
+                        if chunk_rms < TRAILING_SILENCE_RMS_THRESHOLD:
+                            rec["silent_run"] += 1
+                        else:
+                            rec["silent_run"] = 0
+
+                        finished = (
+                            rec["silent_run"] >= trailing_silence_chunks
+                            or len(rec["chunks"]) >= max_chunks_per_recording
+                        )
+                        if finished:
+                            save_utterance_audio(
+                                np.concatenate(rec["chunks"]), rec["payload"]
+                            )
+                        else:
+                            still_open.append(rec)
+                    tail_recordings = still_open
+
                 # Accept waveform chunk into active stream
-                stream.accept_waveform(SAMPLE_RATE, samples.reshape(-1))
+                stream.accept_waveform(SAMPLE_RATE, flat_samples)
 
                 while recognizer.is_ready(stream):
                     recognizer.decode_stream(stream)
@@ -113,13 +181,38 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
                     cue_triggered = matcher.evaluate(text)
                     last_text = text
 
-                    # Reset stream state instantly when a cue is matched
+                    # Reset stream state instantly when a cue is matched --
+                    # captions/matching for the next line must not wait on
+                    # this line's audio finishing.
                     if cue_triggered:
+                        # This new match is proof the previous line is over,
+                        # even if the next actor came in with no audible gap
+                        # (silence detection alone would miss that). Save
+                        # whatever's been captured for it now.
+                        if tail_recordings:
+                            _finalize_tail_recordings(tail_recordings)
+                            tail_recordings = []
+
+                        # The audio captured so far (start of line through
+                        # the match point) moves into a tail recording that
+                        # keeps listening for the rest of the sentence.
+                        if utterance_chunks:
+                            tail_recordings.append(
+                                {
+                                    "chunks": utterance_chunks,
+                                    "payload": matcher.last_payload,
+                                    "silent_run": 0,
+                                }
+                            )
+                        utterance_chunks = []
                         recognizer.reset(stream)
                         last_text = ""
                         continue
 
                 if recognizer.is_endpoint(stream):
+                    # Endpoint reached with no cue match -- off-script or
+                    # misrecognized speech, discard the buffered audio.
+                    utterance_chunks = []
                     recognizer.reset(stream)
                     last_text = ""
 
@@ -132,6 +225,7 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
             flush=True,
         )
     finally:
+        _finalize_tail_recordings(tail_recordings)
         recognizer.reset(stream)
         print("[STT] Speech-to-text worker thread stopped.", flush=True)
 
