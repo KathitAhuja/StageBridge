@@ -8,3 +8,4 @@ python/core/.DS_Store
 python/web/__pycache__/**
 python/web/__pycache__/**
 python/web/.DS_Store
+python/models/**

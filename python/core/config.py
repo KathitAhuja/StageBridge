@@ -1,67 +1,39 @@
 """
 ===============================================================================
 MODULE: config.py
-ROLE  : Central Configuration & Environmental Constants
+ROLE  : High-Speed Configuration Parameters for StageBridge
 ===============================================================================
-
-FUNCTIONAL OVERVIEW:
-1. Dynamically constructs absolute paths across local directories so the app
-   runs cleanly whether launched via CLI, systemd, or Arduino App Lab.
-2. Defines hardware audio streaming parameters for the microphone pipeline.
-3. Sets tuning parameters for neural ASR biasing and fuzzy matching paths.
 """
 
 import os
+from pathlib import Path
 
-# =============================================================================
-# SECTION 1: DIRECTORY & PATH CALCULATIONS
-# =============================================================================
-# BASE_DIR resolves to: /home/arduino/ArduinoApps/stagebridge/python
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Model Definition
+MODEL_NAME = "sherpa-onnx-streaming-zipformer-en-2023-06-21"
+SCRIPT_FILE_NAME = "aladdin_scene_dialogue.json"
 
-# APP_ROOT resolves to: /home/arduino/ArduinoApps/stagebridge
-APP_ROOT = os.path.dirname(BASE_DIR)
+# Path Definitions
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_DIR = BASE_DIR / "models" / MODEL_NAME
+SCRIPT_PATH = BASE_DIR / "scripts" / SCRIPT_FILE_NAME
 
-# Path to the source theater script JSON file containing line IDs and translations
-SCRIPT_PATH = os.path.join(BASE_DIR, "scripts", "aladdin_scene_dialogue.json")
+# Explicit Model File Paths
+TOKENS_PATH = str(MODEL_DIR / "tokens.txt")
+ENCODER_PATH = str(MODEL_DIR / "encoder-epoch-99-avg-1.int8.onnx")
+DECODER_PATH = str(MODEL_DIR / "decoder-epoch-99-avg-1.int8.onnx")
+JOINER_PATH = str(MODEL_DIR / "joiner-epoch-99-avg-1.int8.onnx")
 
-# Path where dynamically generated hotword boosts will be saved for Sherpa-ONNX
-HOTWORDS_PATH = os.path.join(BASE_DIR, "hotwords.txt")
-
-# Locates the Zipformer model directory by checking app root before script folder
-ROOT_MODEL = os.path.join(APP_ROOT, "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17")
-SCRIPT_MODEL = os.path.join(BASE_DIR, "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17")
-MODEL_DIR = ROOT_MODEL if os.path.exists(ROOT_MODEL) else SCRIPT_MODEL
-
-# =============================================================================
-# SECTION 2: AUDIO STREAMING & NEURAL ENGINE PARAMETERS
-# =============================================================================
-# Sampling rate required by Sherpa-ONNX Zipformer acoustic models (16,000 Hz)
+# Audio Parameters
 SAMPLE_RATE = 16000
+BLOCK_SIZE = 800         # 50ms frame chunks
+CHANNELS = 1
+NUM_THREADS = 2
 
-# Audio frame chunk size: 3200 samples = exactly 200 milliseconds per block
-BLOCK_SIZE = 3200
-
-# Acoustic weight multiplier assigned to script vocabulary in hotwords.txt
-HOTWORD_SCORE = 2.5
-
-# =============================================================================
-# SECTION 3: FUZZY CUE-MATCHING ENGINE THRESHOLDS
-# =============================================================================
-# Minimum similarity ratio (%) required to trigger short target lines ("Yes", "No")
-SHORT_MATCH_THRESHOLD = 85
-
-# Minimum similarity ratio (%) required for mid-sentence anchor triggers (3+ words)
-MID_SENTENCE_THRESHOLD = 72
-
-# Maximum number of upcoming script lines to evaluate simultaneously from pointer
+# Matching Thresholds
+SHORT_MATCH_THRESHOLD = 85.0
+MID_SENTENCE_THRESHOLD = 70.0
 LOOKAHEAD_WINDOW = 3
 
-# =============================================================================
-# SECTION 4: AUDIENCE CAPTION WEB SERVER PARAMETERS
-# =============================================================================
-# Interface binding address for the FastAPI/Uvicorn caption server (main thread)
-WEB_HOST = "0.0.0.0"
-
-# Port exposed for audience browsers to connect and receive live translated cues
-WEB_PORT = 8080
+# Web Server Settings
+WEB_HOST = os.getenv("WEB_HOST", "0.0.0.0")
+WEB_PORT = int(os.getenv("WEB_PORT", 8000))
