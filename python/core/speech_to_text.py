@@ -27,6 +27,7 @@ from core.config import (
 )
 from core.cue_matcher import CueMatcher
 from core.audio_recorder import save_utterance_audio
+from core.voice_pipeline import process_matched_line
 
 
 def find_mic_device():
@@ -116,11 +117,18 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
     # detecting the next cue.
     tail_recordings = []
 
+    def _save_and_dub(concatenated_samples, payload):
+        """Saves this line's original audio locally, then hands it off to
+        the voice cloning/dubbing pipeline (which runs on its own
+        background thread pool -- this call returns immediately)."""
+        saved_path = save_utterance_audio(concatenated_samples, payload)
+        process_matched_line(concatenated_samples, payload, saved_path)
+
     def _finalize_tail_recordings(recordings):
         """Saves every still-open tail recording (used on shutdown)."""
         for rec in recordings:
             if rec["chunks"]:
-                save_utterance_audio(np.concatenate(rec["chunks"]), rec["payload"])
+                _save_and_dub(np.concatenate(rec["chunks"]), rec["payload"])
 
     try:
         with sd.InputStream(
@@ -162,7 +170,7 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
                             or len(rec["chunks"]) >= max_chunks_per_recording
                         )
                         if finished:
-                            save_utterance_audio(
+                            _save_and_dub(
                                 np.concatenate(rec["chunks"]), rec["payload"]
                             )
                         else:

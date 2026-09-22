@@ -30,6 +30,9 @@ generate_hotwords(script_data)
 
 # Register web browser broadcaster as subscriber for SSE delivery
 event_bus.subscribe(web_broadcaster.publish)
+# Same broadcaster instance also relays dubbed/translated audio, which
+# arrives later than that line's text (real ElevenLabs generation time).
+event_bus.subscribe_audio(web_broadcaster.publish)
 
 # Instantiate matcher engine
 matcher = CueMatcher(script_data)

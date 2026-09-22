@@ -2,6 +2,7 @@ let eventSource = null;
 let currentActor = null;   // Tracks active speaker
 let isRightSide = false;   // Flips layout only when currentActor changes
 let currentAudio = null;   // Keeps track of active background audio instance
+let currentDubbedAudio = null; // Keeps track of the active dubbed/cloned-voice clip
 
 function startStream(selectedLanguage) {
     document.getElementById('selection-modal').classList.add('hidden');
@@ -16,10 +17,37 @@ function startStream(selectedLanguage) {
         renderChatBubble(payload);
     };
 
+    // Dubbed/cloned-voice audio for a line arrives LATER than its caption
+    // (ElevenLabs generation takes real time), as a separate named SSE
+    // event so it doesn't get mixed up with the text stream above.
+    eventSource.addEventListener('audio', function (event) {
+        const payload = JSON.parse(event.data);
+        if (payload.audio_url) {
+            playDubbedVoice(payload.audio_url);
+        }
+    });
+
     eventSource.onerror = function (error) {
         console.error("SSE Stream disconnected or ended.", error);
         eventSource.close();
     };
+}
+
+function playDubbedVoice(audioUrl) {
+    // Stop any previous dubbed line still playing -- lines are sequential,
+    // so a newly-arrived clip always supersedes the last one.
+    if (currentDubbedAudio) {
+        currentDubbedAudio.pause();
+        currentDubbedAudio.currentTime = 0;
+    }
+
+    currentDubbedAudio = new Audio(audioUrl);
+    currentDubbedAudio.play().catch((error) => {
+        // Browser autoplay restrictions require a prior user gesture (the
+        // language-selection tap on this page satisfies that in most
+        // browsers, but log it in case a particular browser still blocks it).
+        console.warn(`Dubbed audio playback skipped for ${audioUrl}:`, error);
+    });
 }
 
 function playBackgroundVoice(actor, lineId) {

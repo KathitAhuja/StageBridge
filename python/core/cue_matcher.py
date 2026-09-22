@@ -7,7 +7,12 @@ ROLE  : Precision Fuzzy Text Alignment Engine with Robust Interjection Support
 
 import re
 from rapidfuzz import fuzz
-from core.config import SHORT_MATCH_THRESHOLD, MID_SENTENCE_THRESHOLD, LOOKAHEAD_WINDOW
+from core.config import (
+    SHORT_MATCH_THRESHOLD,
+    MID_SENTENCE_THRESHOLD,
+    LOOKAHEAD_WINDOW,
+    MIN_WORDS_FOR_ANCHOR_MATCH,
+)
 from core.event_bus import event_bus
 
 
@@ -97,6 +102,15 @@ class CueMatcher:
             # PATH 3: MULTI-WORD TARGET LINES (3+ words in script)
             # Spoken phrase must align with the prefix or order of the line
             # -----------------------------------------------------------------
+            # A short recognized fragment (breath noise, room echo, a
+            # mis-heard sound right after the previous line's stream reset)
+            # isn't reliable signal to anchor against a long line -- the
+            # prefix comparison below truncates the TARGET to match, so too
+            # few words makes that truncated target trivially easy to match
+            # by chance (see MIN_WORDS_FOR_ANCHOR_MATCH in config.py).
+            if len(words) < MIN_WORDS_FOR_ANCHOR_MATCH:
+                continue
+
             # Compare spoken text directly against the prefix of the target line
             target_prefix = " ".join(target_words[:len(words)])
             prefix_score = fuzz.ratio(live_clean, target_prefix)

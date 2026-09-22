@@ -34,6 +34,17 @@ SHORT_MATCH_THRESHOLD = 85.0
 MID_SENTENCE_THRESHOLD = 70.0
 LOOKAHEAD_WINDOW = 3
 
+# PATH 3 (multi-word anchor match, see cue_matcher.py) compares spoken text
+# against the target line's TEXT TRUNCATED to the same word count. With too
+# few recognized words, that truncated target collapses to almost nothing
+# (e.g. 1 word), which a stray ASR fragment (breath noise, room echo, a
+# mis-heard sound right after a stream reset) can trivially score 100%
+# against by chance if it happens to match a line's first word or two. This
+# is the minimum number of actually-recognized words required before this
+# path is attempted at all, so a 1-2 word fragment can never anchor-match a
+# longer line on its own.
+MIN_WORDS_FOR_ANCHOR_MATCH = 3
+
 # Voice Recording Output (matched actor lines saved here as MP3)
 VOICE_DIR = BASE_DIR / "voice"
 VOICE_ORIGINAL_DIR = VOICE_DIR / "original"
@@ -54,16 +65,31 @@ TRAILING_SILENCE_RMS_THRESHOLD = 0.02
 TRAILING_SILENCE_SECONDS = 2.0
 MAX_LINE_RECORD_SECONDS = 15.0
 
-# While a tail recording is open, its audio is independently re-decoded and
-# compared against the FULL matched script line (same technique CueMatcher
-# uses). Once the decoded tail text accounts for the whole line at this
-# fuzzy-match score or higher, the recording is finalized immediately --
-# before any off-script ad-lib/aside tacked on right after the line gets
-# captured too. This is the primary cutoff; silence/next-match/length-cap
-# above remain as fallbacks for when a clean content match never lands
-# (misrecognition, mumbled ending, etc.).
-CONTENT_COMPLETE_FUZZY_THRESHOLD = 90.0
-
 # Web Server Settings
 WEB_HOST = os.getenv("WEB_HOST", "0.0.0.0")
 WEB_PORT = int(os.getenv("WEB_PORT", 8000))
+
+# ElevenLabs Voice Cloning + Dubbing
+# ------------------------------------------------------------------------
+# Each actor's own recorded lines (python/voice/original/) accumulate until
+# VOICE_CLONE_THRESHOLD_SECONDS is reached, at which point an Instant Voice
+# Clone is created automatically and used for all of that actor's later
+# translated lines. Until then (and for actors with no premade fallback
+# listed below), DEFAULT_VOICE_ID is used.
+#
+#   - ACTOR_VOICE_IDS: optional per-actor premade ElevenLabs voice_id to use
+#     as that actor's fallback instead of DEFAULT_VOICE_ID, e.g.:
+#         ACTOR_VOICE_IDS = {"ALADDIN": "ErXwobaYiN019PkySvjV"}
+#   - DEFAULT_VOICE_ID: shared fallback for any actor not listed above (or
+#     with no premade voice picked yet).
+#   - VOICE_CLONE_THRESHOLD_SECONDS: seconds of an actor's own audio needed
+#     before an Instant Voice Clone is created for them.
+#   - ELEVENLABS_TTS_MODEL_ID: ElevenLabs model used to synthesize
+#     translated lines (multilingual, needed for Spanish/Chinese output).
+ACTOR_VOICE_IDS = {}
+DEFAULT_VOICE_ID = os.getenv("ELEVENLABS_DEFAULT_VOICE_ID", "TX3LPaxmHKxFdv7VOQHJ")
+VOICE_CLONE_THRESHOLD_SECONDS = 10.0
+ELEVENLABS_TTS_MODEL_ID = "eleven_multilingual_v2"
+
+# Dubbed/translated line audio output (served to the audience web UI)
+VOICE_TRANSLATED_DIR = VOICE_DIR / "translated"

@@ -31,20 +31,37 @@ class EventBus:
     def __init__(self):
         # Internal registry storing active callback functions
         self._subscribers = []
+        # Separate registry for AUDIO_READY listeners (see subscribe_audio).
+        self._audio_subscribers = []
 
     def subscribe(self, callback_func):
         """
         Registers a new function listener to receive live cue events.
-        
+
         Args:
             callback_func (callable): Function taking a single 'dict' payload.
         """
         self._subscribers.append(callback_func)
 
+    def subscribe_audio(self, callback_func):
+        """
+        Registers a listener for AUDIO_READY events -- a translated/dubbed
+        audio clip becoming available. Kept as a separate channel from
+        emit_cue/subscribe because AUDIO_READY payloads have a different
+        shape (language, audio_path -- no english/match_type) and, unlike a
+        cue, always fire LATER than that same line's CUE_TRIGGERED event:
+        cloning/TTS via ElevenLabs takes real network time, well after the
+        line's text has already been broadcast.
+
+        Args:
+            callback_func (callable): Function taking a single 'dict' payload.
+        """
+        self._audio_subscribers.append(callback_func)
+
     def emit_cue(self, cue_payload: dict):
         """
         Iterates over all registered listeners and delivers the cue payload.
-        
+
         Args:
             cue_payload (dict): Standardized dictionary containing line ID,
                                 spoken text, match type, and translations.
@@ -56,6 +73,22 @@ class EventBus:
             except Exception as err:
                 # Prevent subscriber crashes from interrupting other output streams
                 print(f"[EVENT_BUS ERROR] Listener '{callback.__name__}' failed: {err}", flush=True)
+
+    def emit_audio_ready(self, audio_payload: dict):
+        """
+        Iterates over all registered AUDIO_READY listeners and delivers the
+        payload for one just-finished dubbed/translated audio clip.
+
+        Args:
+            audio_payload (dict): line_id, scene_id, actor, language, and
+                                   audio_path for the clip that just finished
+                                   generating.
+        """
+        for callback in self._audio_subscribers:
+            try:
+                callback(audio_payload)
+            except Exception as err:
+                print(f"[EVENT_BUS ERROR] Audio listener '{callback.__name__}' failed: {err}", flush=True)
 
 
 # Global singleton instance used throughout the app life cycle
@@ -73,14 +106,28 @@ def console_logger(payload: dict):
     print(f"  [CUE TRIGGERED - {payload['match_type']}] -> Line #{payload['line_id']} ({payload['scene_id']})", flush=True)
     print(f"  Actor       : {payload['actor']}", flush=True)
     print(f"  English     : {payload['english']}", flush=True)
-    
+
     if payload.get("spanish_translation"):
         print(f"  Spanish     : {payload['spanish_translation']}", flush=True)
     if payload.get("chinese_translation"):
         print(f"  Chinese     : {payload['chinese_translation']}", flush=True)
-        
+
     print(f"{'='*65}\n", flush=True)
 
 
 # Automatically attach the console logging subscriber when module loads
 event_bus.subscribe(console_logger)
+
+
+def console_audio_logger(payload: dict):
+    """
+    Subscriber Callback: Logs a dubbed/translated clip becoming available.
+    """
+    print(
+        f"[AUDIO READY] Line #{payload.get('line_id')} "
+        f"[{payload.get('language')}] -> {payload.get('audio_path')}",
+        flush=True,
+    )
+
+
+event_bus.subscribe_audio(console_audio_logger)
