@@ -214,6 +214,25 @@ def _dub_line(text: str, voice_id: str, payload: dict, lang_code: str):
     lang_dir.mkdir(parents=True, exist_ok=True)
     output_path = lang_dir / f"{line_id}.mp3"
 
+    # Fast path: if the translated clip already exists on disk and is non-empty,
+    # reuse it immediately (skips ElevenLabs network latency and API call).
+    if output_path.is_file() and output_path.stat().st_size > 0:
+        print(
+            f"[VOICE CACHE] Using cached [{lang_code}] line {line_id} -> {output_path}",
+            flush=True,
+        )
+        event_bus.emit_audio_ready(
+            {
+                "event": "AUDIO_READY",
+                "line_id": payload.get("line_id"),
+                "scene_id": payload.get("scene_id"),
+                "actor": payload.get("actor"),
+                "language": lang_code,
+                "audio_path": str(output_path),
+            }
+        )
+        return
+
     try:
         audio_generator = _get_client().text_to_speech.convert(
             text=text, voice_id=voice_id, model_id=ELEVENLABS_TTS_MODEL_ID
