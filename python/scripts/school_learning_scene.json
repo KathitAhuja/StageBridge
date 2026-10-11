@@ -1,0 +1,68 @@
+[
+  {
+    "line_id": 1,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "MOTHER",
+    "english": "My name is Nikki and I live in Fremont, California. What a beautiful day for a walk, it is Sunny, pleasant and breezy",
+    "english_with_tags": "[warmly] My name is Nikki, and I live in Fremont, California. [cheerful] What a beautiful day for a walk! It's sunny... pleasant... and breezy.",
+    "spanish": "Me llamo Nikki y vivo en Fremont, California. Qué hermoso día para salir a caminar. Está soleado, agradable y corre una brisa suave.",
+    "spanish_with_tags": "[warmly] Me llamo Nikki y vivo en Fremont, California. [cheerful] ¡Qué hermoso día para salir a caminar! Está soleado... agradable... y corre una brisa suave.",
+    "chinese": "我叫Nikki，住在加利福尼亚州的弗里蒙特。今天真是个适合散步的好天气，阳光明媚，气温宜人，还有微风。",
+    "chinese_with_tags": "[warmly] 我叫Nikki，住在加利福尼亚州的弗里蒙特。[cheerful] 今天真是个适合散步的好天气！阳光明媚……气温宜人……还有微风。"
+  },
+  {
+    "line_id": 2,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "SON",
+    "english": "My name is Kiaan and I live in Fremont, California. What a beautiful day for a walk, it is Sunny, pleasant and breezy.",
+    "english_with_tags": "[cheerfully] My name is Kiaan, and I live in Fremont, California. [excited] What a beautiful day for a walk! It's sunny... pleasant... and breezy.",
+    "spanish": "Me llamo Kiaan y vivo en Fremont, California. Qué hermoso día para salir a caminar. Está soleado, agradable y corre una brisa suave.",
+    "spanish_with_tags": "[cheerfully] Me llamo Kiaan y vivo en Fremont, California. [excited] ¡Qué hermoso día para salir a caminar! Está soleado... agradable... y corre una brisa suave.",
+    "chinese": "我叫Kiaan，住在加利福尼亚州的弗里蒙特。今天真是个适合散步的好天气，阳光明媚，气温宜人，还有微风。",
+    "chinese_with_tags": "[cheerfully] 我叫Kiaan，住在加利福尼亚州的弗里蒙特。[excited] 今天真是个适合散步的好天气！阳光明媚……气温宜人……还有微风。"
+  },
+  {
+    "line_id": 3,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "MOTHER",
+    "english": "So Tell me, what did you learn at school today?",
+    "english_with_tags": "[cheerful] So! Tell me... what did you learn at school today?",
+    "spanish": "Entonces, dime, ¿qué aprendiste hoy en la escuela?",
+    "spanish_with_tags": "[cheerful] Entonces... dime, ¿qué aprendiste hoy en la escuela?",
+    "chinese": "那么，告诉我，你今天在学校学了什么？",
+    "chinese_with_tags": "[cheerful] 那么……告诉我，你今天在学校学了什么？"
+  },
+  {
+    "line_id": 4,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "SON",
+    "english": "Well apparently not enough",
+    "english_with_tags": "[thoughtful] Well... apparently, not enough.",
+    "spanish": "Bueno, al parecer no lo suficiente.",
+    "spanish_with_tags": "[thoughtful] Bueno... al parecer, no lo suficiente.",
+    "chinese": "嗯，看来学得还不够。",
+    "chinese_with_tags": "[thoughtful] 嗯……看来，学得还不够。"
+  },
+  {
+    "line_id": 5,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "MOTHER",
+    "english": "Not enough? What do you mean, not enough?",
+    "english_with_tags": "[surprised] Not enough? [curious] What do you mean... not enough?",
+    "spanish": "¿No lo suficiente? ¿Qué quieres decir con que no fue suficiente?",
+    "spanish_with_tags": "[surprised] ¿No lo suficiente? [curious] ¿Qué quieres decir... con que no fue suficiente?",
+    "chinese": "还不够？你说还不够是什么意思？",
+    "chinese_with_tags": "[surprised] 还不够？[curious] 你说……还不够是什么意思？"
+  },
+  {
+    "line_id": 6,
+    "scene_id": "SCENE_CONVERSATION_01",
+    "actor": "SON",
+    "english": "Well, they want me back again tomorrow.",
+    "english_with_tags": "[matter-of-fact] Well... they want me back again tomorrow.",
+    "spanish": "Bueno, quieren que vuelva mañana.",
+    "spanish_with_tags": "[matter-of-fact] Bueno... quieren que vuelva mañana.",
+    "chinese": "嗯，他们明天还要我回去。",
+    "chinese_with_tags": "[matter-of-fact] 嗯……他们明天还要我回去。"
+  }
+]
