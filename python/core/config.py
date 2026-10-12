@@ -7,10 +7,13 @@ ROLE  : High-Speed Configuration Parameters for StageBridge
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Model Definition
 MODEL_NAME = "sherpa-onnx-streaming-zipformer-en-2023-06-21"
-SCRIPT_FILE_NAME = "aladdin_scene_dialogue.json"
+SCRIPT_FILE_NAME = "school_learning_scene.json"
 
 # Path Definitions
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -86,10 +89,16 @@ WEB_PORT = int(os.getenv("WEB_PORT", 8000))
 #     before an Instant Voice Clone is created for them.
 #   - ELEVENLABS_TTS_MODEL_ID: ElevenLabs model used to synthesize
 #     translated lines (multilingual, needed for Spanish/Chinese output).
-ACTOR_VOICE_IDS = {}
+ACTOR_VOICE_IDS = {
+    "MOTHER": "a7NxsR5B1mpwgpVa10g3",
+    "SON": "EeQEodFZVtBkjtgK3HBc",
+}
 DEFAULT_VOICE_ID = os.getenv("ELEVENLABS_DEFAULT_VOICE_ID", "TX3LPaxmHKxFdv7VOQHJ")
 VOICE_CLONE_THRESHOLD_SECONDS = 10.0
-ELEVENLABS_TTS_MODEL_ID = "eleven_multilingual_v2"
+ELEVENLABS_TTS_MODEL_ID = "eleven_v3"
+
+# Master toggle for Text-to-Speech / ElevenLabs flow (defaults to True)
+ENABLE_ELEVENLABS = os.getenv("ENABLE_ELEVENLABS", "true").lower() in ("true", "1", "yes")
 
 # Dubbed/translated line audio output (served to the audience web UI)
 VOICE_TRANSLATED_DIR = VOICE_DIR / "translated"

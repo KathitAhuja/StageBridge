@@ -107,10 +107,10 @@ def console_logger(payload: dict):
     print(f"  Actor       : {payload['actor']}", flush=True)
     print(f"  English     : {payload['english']}", flush=True)
 
-    if payload.get("spanish_translation"):
-        print(f"  Spanish     : {payload['spanish_translation']}", flush=True)
-    if payload.get("chinese_translation"):
-        print(f"  Chinese     : {payload['chinese_translation']}", flush=True)
+    if payload.get("spanish"):
+        print(f"  Spanish     : {payload['spanish']}", flush=True)
+    if payload.get("chinese"):
+        print(f"  Chinese     : {payload['chinese']}", flush=True)
 
     print(f"{'='*65}\n", flush=True)
 

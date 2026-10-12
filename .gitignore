@@ -9,3 +9,7 @@ python/web/__pycache__/**
 python/web/__pycache__/**
 python/web/.DS_Store
 python/models/**
+*.env
+.env
+python/voice/original/.DS_Store
+python/voice/translated/.DS_Store

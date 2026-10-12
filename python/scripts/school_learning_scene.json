@@ -3,23 +3,23 @@
     "line_id": 1,
     "scene_id": "SCENE_CONVERSATION_01",
     "actor": "MOTHER",
-    "english": "My name is Nikki and I live in Fremont, California. What a beautiful day for a walk, it is Sunny, pleasant and breezy",
-    "english_with_tags": "[warmly] My name is Nikki, and I live in Fremont, California. [cheerful] What a beautiful day for a walk! It's sunny... pleasant... and breezy.",
-    "spanish": "Me llamo Nikki y vivo en Fremont, California. Qué hermoso día para salir a caminar. Está soleado, agradable y corre una brisa suave.",
-    "spanish_with_tags": "[warmly] Me llamo Nikki y vivo en Fremont, California. [cheerful] ¡Qué hermoso día para salir a caminar! Está soleado... agradable... y corre una brisa suave.",
-    "chinese": "我叫Nikki，住在加利福尼亚州的弗里蒙特。今天真是个适合散步的好天气，阳光明媚，气温宜人，还有微风。",
-    "chinese_with_tags": "[warmly] 我叫Nikki，住在加利福尼亚州的弗里蒙特。[cheerful] 今天真是个适合散步的好天气！阳光明媚……气温宜人……还有微风。"
+    "english": "I live in Fremont, California.",
+    "english_with_tags": "[warmly] I live in Fremont, California.",
+    "spanish": "Vivo en Fremont, California.",
+    "spanish_with_tags": "[warmly] Vivo en Fremont, California.",
+    "chinese": "我住在加利福尼亚州的弗里蒙特。",
+    "chinese_with_tags": "[warmly] 我住在加利福尼亚州的弗里蒙特。"
   },
   {
     "line_id": 2,
     "scene_id": "SCENE_CONVERSATION_01",
     "actor": "SON",
-    "english": "My name is Kiaan and I live in Fremont, California. What a beautiful day for a walk, it is Sunny, pleasant and breezy.",
-    "english_with_tags": "[cheerfully] My name is Kiaan, and I live in Fremont, California. [excited] What a beautiful day for a walk! It's sunny... pleasant... and breezy.",
-    "spanish": "Me llamo Kiaan y vivo en Fremont, California. Qué hermoso día para salir a caminar. Está soleado, agradable y corre una brisa suave.",
-    "spanish_with_tags": "[cheerfully] Me llamo Kiaan y vivo en Fremont, California. [excited] ¡Qué hermoso día para salir a caminar! Está soleado... agradable... y corre una brisa suave.",
-    "chinese": "我叫Kiaan，住在加利福尼亚州的弗里蒙特。今天真是个适合散步的好天气，阳光明媚，气温宜人，还有微风。",
-    "chinese_with_tags": "[cheerfully] 我叫Kiaan，住在加利福尼亚州的弗里蒙特。[excited] 今天真是个适合散步的好天气！阳光明媚……气温宜人……还有微风。"
+    "english": "We came from Phoenix Arizona few years back",
+    "english_with_tags": "[thoughtfully] We came from Phoenix Arizona few years back",
+    "spanish": "几年前，我们从亚利桑那州的凤凰城来到了这里。",
+    "spanish_with_tags": "[thoughtfully] Vinimos de Phoenix, Arizona, hace unos años.",
+    "chinese": "几年前，我们从亚利桑那州的凤凰城来到了这里。",
+    "chinese_with_tags": "[thoughtfully] 几年前，我们从亚利桑那州的凤凰城来到了这里。"
   },
   {
     "line_id": 3,

@@ -24,6 +24,7 @@ from core.config import (
     TRAILING_SILENCE_RMS_THRESHOLD,
     TRAILING_SILENCE_SECONDS,
     MAX_LINE_RECORD_SECONDS,
+    ENABLE_ELEVENLABS,
 )
 from core.cue_matcher import CueMatcher
 from core.audio_recorder import save_utterance_audio
@@ -121,6 +122,8 @@ def start_speech_recognition(matcher: CueMatcher, stop_event: threading.Event = 
         """Saves this line's original audio locally, then hands it off to
         the voice cloning/dubbing pipeline (which runs on its own
         background thread pool -- this call returns immediately)."""
+        if not ENABLE_ELEVENLABS:
+            return
         saved_path = save_utterance_audio(concatenated_samples, payload)
         process_matched_line(concatenated_samples, payload, saved_path)
 

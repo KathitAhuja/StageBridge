@@ -45,10 +45,10 @@ app.mount(
 # Maps an audience member's language selection to the cue payload field
 # CueMatcher already populates for that language.
 LANG_FIELD_MAP = {
-    "spanish": "spanish_translation",
-    "es": "spanish_translation",
-    "chinese": "chinese_translation",
-    "zh": "chinese_translation",
+    "spanish": "spanish",
+    "es": "spanish",
+    "chinese": "chinese",
+    "zh": "chinese",
     "english": "english",
     "en": "english",
 }

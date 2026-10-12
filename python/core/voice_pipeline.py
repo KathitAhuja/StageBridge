@@ -12,8 +12,8 @@ FUNCTIONAL OVERVIEW:
    created automatically from those clips and used for all of that actor's
    FUTURE translated lines. Until then, a fallback voice_id is used
    (ACTOR_VOICE_IDS[actor] if configured, else DEFAULT_VOICE_ID).
-2. For each translation on the matched cue (spanish_translation,
-   chinese_translation), the translated text is synthesized in the actor's
+2. For each tagged translation on the matched cue (spanish_with_tags,
+   chinese_with_tags), the translated text is synthesized in the actor's
    current voice via ElevenLabs TTS -- so the audience hears the line as if
    the actual actor were delivering it in that language -- saved under
    python/voice/translated/<lang>/<line_id>.mp3, and an AUDIO_READY event is
@@ -47,16 +47,17 @@ from core.config import (
     VOICE_CLONE_THRESHOLD_SECONDS,
     VOICE_TRANSLATED_DIR,
     ELEVENLABS_TTS_MODEL_ID,
+    ENABLE_ELEVENLABS,
 )
 from core.event_bus import event_bus
 
 load_dotenv()
 
-# Payload fields holding translated text, mapped to the short language code
+# Payload fields holding tagged translated text, mapped to the short language code
 # used for filenames / SSE events / the audience language selector.
 TRANSLATION_FIELDS = {
-    "spanish_translation": "es",
-    "chinese_translation": "zh",
+    "spanish_with_tags": "es",
+    "chinese_with_tags": "zh",
 }
 
 _client = None
@@ -206,7 +207,7 @@ def _get_voice_manager(actor_name: str) -> DynamicVoiceManager:
 def _dub_line(text: str, voice_id: str, payload: dict, lang_code: str):
     """Synthesizes one translated line in the actor's current voice and
     emits an AUDIO_READY event once the file is written."""
-    if not text:
+    if not ENABLE_ELEVENLABS or not text:
         return
 
     line_id = str(payload.get("line_id", "unknown"))
@@ -275,13 +276,16 @@ def process_matched_line(samples, payload: dict, original_audio_path: str):
             used only to compute duration precisely (len(samples)/SAMPLE_RATE)
             -- no need to re-parse/estimate from the encoded MP3 file.
         payload (dict): The matched cue payload (actor, line_id, scene_id,
-            spanish_translation, chinese_translation, ...).
+            spanish_with_tags, chinese_with_tags, ...).
         original_audio_path (str): Path to the actor's own saved audio for
             this line (core.audio_recorder.save_utterance_audio's return
             value). If falsy, cloning progress isn't updated for this line
             (e.g. the save failed) but dubbing still proceeds on whatever
             voice is currently active.
     """
+    if not ENABLE_ELEVENLABS:
+        return
+
     duration_seconds = (len(samples) / float(SAMPLE_RATE)) if samples is not None else 0.0
     _executor.submit(
         _process_matched_line_sync, duration_seconds, payload, original_audio_path
