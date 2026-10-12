@@ -222,22 +222,22 @@ def _dub_line(text: str, voice_id: str, payload: dict, lang_code: str):
             f"[VOICE CACHE] Using cached [{lang_code}] line {line_id} -> {output_path}",
             flush=True,
         )
-        event_bus.emit_audio_ready(
-            {
-                "event": "AUDIO_READY",
-                "line_id": payload.get("line_id"),
-                "scene_id": payload.get("scene_id"),
-                "actor": payload.get("actor"),
-                "language": lang_code,
-                "audio_path": str(output_path),
-            }
-        )
         return
 
     try:
         audio_generator = _get_client().text_to_speech.convert(
-            text=text, voice_id=voice_id, model_id=ELEVENLABS_TTS_MODEL_ID
+            text=text,
+            voice_id=voice_id,
+            model_id=ELEVENLABS_TTS_MODEL_ID,
+            voice_settings={
+                "speed": 1.2,
+                "similarity_boost": 0.85,  # High match to original speaker (0.85 - 0.90)
+                "stability": 0.65,  # Keeps voice characteristics consistent
+                "style": 0.0,  # 0.0 avoids extra distortion/latency
+                "use_speaker_boost": True  # Enhances clarity and similarity matching
+            }
         )
+        
         with open(output_path, "wb") as f:
             for chunk in audio_generator:
                 f.write(chunk)

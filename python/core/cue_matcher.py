@@ -6,14 +6,23 @@ ROLE  : Precision Fuzzy Text Alignment Engine with Robust Interjection Support
 """
 
 import re
+import pathlib
 from rapidfuzz import fuzz
 from core.config import (
     SHORT_MATCH_THRESHOLD,
     MID_SENTENCE_THRESHOLD,
     LOOKAHEAD_WINDOW,
     MIN_WORDS_FOR_ANCHOR_MATCH,
+    VOICE_TRANSLATED_DIR,
+    ENABLE_ELEVENLABS,
 )
 from core.event_bus import event_bus
+
+# Map payload fields to short language codes used for filenames/events
+TRANSLATION_FIELDS = {
+    "spanish_with_tags": "es",
+    "chinese_with_tags": "zh",
+}
 
 
 class CueMatcher:
@@ -51,7 +60,39 @@ class CueMatcher:
         }
 
         self.last_payload = payload
+
+        # 1. Broadcast the text cue immediately
         event_bus.emit_cue(payload)
+
+        # 2. INSTANT CACHE DISPATCH: If pre-translated MP3 files exist on disk,
+        # dispatch AUDIO_READY immediately right alongside the text (zero latency)!
+        if ENABLE_ELEVENLABS:
+            line_id = target_node.get("line_id")
+            if line_id:
+                for field, lang_code in TRANSLATION_FIELDS.items():
+                    text = target_node.get(field, "")
+                    if not text:
+                        continue
+
+                    lang_dir = VOICE_TRANSLATED_DIR / lang_code
+                    output_path = lang_dir / f"{line_id}.mp3"
+
+                    if output_path.is_file() and output_path.stat().st_size > 0:
+                        print(
+                            f"[INSTANT CACHE] Dispatching cached [{lang_code}] line {line_id} -> {output_path}",
+                            flush=True,
+                        )
+                        event_bus.emit_audio_ready(
+                            {
+                                "event": "AUDIO_READY",
+                                "line_id": line_id,
+                                "scene_id": target_node.get("scene_id"),
+                                "actor": target_node.get("actor"),
+                                "language": lang_code,
+                                "audio_path": str(output_path),
+                            }
+                        )
+
         self.current_line_idx = matched_idx + 1
 
     def evaluate(self, live_text: str) -> bool:
