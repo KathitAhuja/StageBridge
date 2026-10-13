@@ -231,8 +231,8 @@ def _dub_line(text: str, voice_id: str, payload: dict, lang_code: str):
             model_id=ELEVENLABS_TTS_MODEL_ID,
             voice_settings={
                 "speed": 1.2,
-                "similarity_boost": 0.85,  # High match to original speaker (0.85 - 0.90)
-                "stability": 0.65,  # Keeps voice characteristics consistent
+                "similarity_boost": 0.95,  # High match to original speaker (0.85 - 0.90)
+                "stability": 0.5,  # Keeps voice characteristics consistent
                 "style": 0.0,  # 0.0 avoids extra distortion/latency
                 "use_speaker_boost": True  # Enhances clarity and similarity matching
             }

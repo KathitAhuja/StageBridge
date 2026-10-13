@@ -4,10 +4,39 @@ let isRightSide = false;   // Flips layout only when currentActor changes
 let currentAudio = null;   // Keeps track of active background audio instance
 let currentDubbedAudio = null; // Keeps track of the active dubbed/cloned-voice clip
 
+let sharedDubbedAudio = new Audio();
+
+// A single silent sample, used only to unlock sharedDubbedAudio for iOS
+// Safari (see startStream below). Generated/verified locally as a minimal
+// valid 1-sample WAV -- not a placeholder.
+const SILENT_AUDIO_DATA_URL =
+    "data:audio/wav;base64,UklGRiUAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQEAAACA";
+
 function startStream(selectedLanguage) {
     document.getElementById('selection-modal').classList.add('hidden');
     document.getElementById('live-indicator').classList.remove('hidden');
     document.getElementById('live-indicator').classList.add('flex');
+
+    // Unlock sharedDubbedAudio for iOS Safari. A mere .load() does NOT
+    // satisfy iOS's autoplay policy -- it specifically requires an actual
+    // .play() call to happen synchronously inside a real user gesture
+    // (this click/tap). Later, playDubbedVoice() calls .play() from inside
+    // an SSE event handler, which fires asynchronously and is NOT a user
+    // gesture -- without this unlock, iOS silently blocks that .play()
+    // (captions still render fine since those are just DOM updates, so the
+    // failure is easy to miss: text works, audio silently doesn't).
+    // Playing a real (silent) clip here, then immediately pausing, is the
+    // standard unlock trick; swapping .src later for a real clip and
+    // calling .play() again then succeeds, since it's the same element.
+    sharedDubbedAudio.src = SILENT_AUDIO_DATA_URL;
+    sharedDubbedAudio.play()
+        .then(() => {
+            sharedDubbedAudio.pause();
+            sharedDubbedAudio.currentTime = 0;
+        })
+        .catch((error) => {
+            console.warn("Audio unlock attempt failed (may still work on non-iOS browsers):", error);
+        });
 
     const streamUrl = `/api/v1/stream?lang=${encodeURIComponent(selectedLanguage)}`;
     eventSource = new EventSource(streamUrl);
@@ -17,9 +46,6 @@ function startStream(selectedLanguage) {
         renderChatBubble(payload);
     };
 
-    // Dubbed/cloned-voice audio for a line arrives LATER than its caption
-    // (ElevenLabs generation takes real time), as a separate named SSE
-    // event so it doesn't get mixed up with the text stream above.
     eventSource.addEventListener('audio', function (event) {
         const payload = JSON.parse(event.data);
         if (payload.audio_url) {
@@ -34,18 +60,12 @@ function startStream(selectedLanguage) {
 }
 
 function playDubbedVoice(audioUrl) {
-    // Stop any previous dubbed line still playing -- lines are sequential,
-    // so a newly-arrived clip always supersedes the last one.
-    if (currentDubbedAudio) {
-        currentDubbedAudio.pause();
-        currentDubbedAudio.currentTime = 0;
-    }
+    // Reuse the persistent audio element and update its source
+    sharedDubbedAudio.pause();
+    sharedDubbedAudio.currentTime = 0;
+    sharedDubbedAudio.src = audioUrl;
 
-    currentDubbedAudio = new Audio(audioUrl);
-    currentDubbedAudio.play().catch((error) => {
-        // Browser autoplay restrictions require a prior user gesture (the
-        // language-selection tap on this page satisfies that in most
-        // browsers, but log it in case a particular browser still blocks it).
+    sharedDubbedAudio.play().catch((error) => {
         console.warn(`Dubbed audio playback skipped for ${audioUrl}:`, error);
     });
 }

@@ -59,10 +59,10 @@
     "scene_id": "SCENE_CONVERSATION_01",
     "actor": "SON",
     "english": "Well, they want me back again tomorrow.",
-    "english_with_tags": "[matter-of-fact] Well... they want me back again tomorrow.",
+    "english_with_tags": "[mischievously] Well... they want me back again tomorrow.",
     "spanish": "Bueno, quieren que vuelva mañana.",
-    "spanish_with_tags": "[matter-of-fact] Bueno... quieren que vuelva mañana.",
+    "spanish_with_tags": "[mischievously] Bueno... quieren que vuelva mañana.",
     "chinese": "嗯，他们明天还要我回去。",
-    "chinese_with_tags": "[matter-of-fact] 嗯……他们明天还要我回去。"
+    "chinese_with_tags": "[mischievously] 嗯……他们明天还要我回去。"
   }
 ]
